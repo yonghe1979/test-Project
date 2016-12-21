@@ -30,10 +30,12 @@ def DataAnalysis(paper, exchange, price2, volumne2):
     Clevel = 0  #1 - 4, 1 is most important 
     Ctype = 0 #1 is normal buying, 2 is shorting selling
     today1 = datetime.date.today()
-    if today1.weekday() == 0:
-        lastday = today1 - datetime.timedelta(days=3)
-    else:
-        lastday = today1 - datetime.timedelta(days=1)
+    #if today1.weekday() == 0:
+    #    lastday = today1 - datetime.timedelta(days=3)
+    #else:
+    #    lastday = today1 - datetime.timedelta(days=1)
+    
+    
     
     time2 = time.time()
     time2 = time.localtime(time2)
@@ -44,17 +46,22 @@ def DataAnalysis(paper, exchange, price2, volumne2):
     min1 = time2.tm_min
     sec1 = time2.tm_sec
     
-    firstTrade = 0
-    if exchange == 'ST' or exchange == 'OSE':
-        if hour1 == 9 and min1 < 30:
-            firstTrade = 1
-        else:
-            firstTrade = 0
-    else:
-        if hour1 == 15 and min1 < 59:
-            firstTrade = 1
-        else:
-            firstTrade = 0
+    normalTrade = 0
+    if exchange == 'OSE':
+        if hour1>= 9 and min1 >30 :
+            normalTrade = 1
+            
+    elif exchange == 'ST':
+        if hour1>= 9 and min1 >30 :
+            normalTrade = 1
+    elif exchange == 'O':
+        if hour1>= 16 and min1 >0 :
+            normalTrade = 1
+        
+    elif exchange == 'N':
+        if hour1>= 16 and min1 >0 :
+            normalTrade = 1
+    
 #    MP.controlPara()
     try:
         Camount = MP.control1.ix[paper,'Limit']
@@ -76,17 +83,20 @@ def DataAnalysis(paper, exchange, price2, volumne2):
     lmdFB_name1 = 'lmdFB'+'-'+exchange+'.csv'
     lmdRM_name2 = 'lmdRM'+'-'+exchange+'_S.csv'
     lmdFB_name2 = 'lmdFB'+'-'+exchange+'_S.csv'
-    
+
     if Ctype == 1:
         lmdRM_name = lmdRM_name1
         lmdFB_name = lmdFB_name1
     elif Ctype == 2:
         lmdRM_name = lmdRM_name2
         lmdFB_name = lmdFB_name2
-    else:
-        lmdRM_name = lmdRM_name1  ##defaut using normal file
+    elif Ctype == 3:
+        lmdRM_name = lmdRM_name1  
         lmdFB_name = lmdFB_name1
-        with open('Errorlog.txt','a') as f:
+    else:
+	lmdRM_name = lmdRM_name1  ##defaut using normal file
+        lmdFB_name = lmdFB_name1
+	with open('Errorlog.txt','a') as f:
             print(time1,paper,'Ctype = ', Ctype,' Ctype read error', file = f)
     
     database_str = 'HistoryPrice.db'
@@ -139,536 +149,934 @@ def DataAnalysis(paper, exchange, price2, volumne2):
     string8 = 'E'
     percent = 0.04
 
-    if Cnumber > 0 and Cdata == 1: 
+    if Cnumber > 0 and Cdata == 1 and normalTrade: 
         if Ctype == 1:
             if Cmethod == 1:
-                if avmood1[n2-2] >= 0 and avmood1[n2-1]>0 and Citt==0.0:
-                    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-                        if avmood1_2 <= 0:                    
-                            quantity = int(Camount/price3)
-                            idt1 = 'B'
-                            short = 'normal'
-                            Onumber = '01'                
-                            MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
-		    else:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-                        if avmood1_2 <= 0:                    
-                            quantity = int(Camount/price3)
-                            idt1 = 'B'
-                            short = 'normal'
-                            Onumber = '10'                
-                            MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
+                if Citt == 0:
+                    if avmood1[n2-2] >= 0 and avmood1[n2-1]>0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)
+  		        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 <= 0:                    
+                                quantity = int(Camount/price3)
+                                idt1 = 'B'
+                                short = 'normal'
+                                Onumber = '1100'                
+                                MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
+                    elif avmood1[n2-2] <= 0 and avmood1[n2-1]>0:
+                        quantity = int(Camount/price3)
+                        idt1 = 'B'
+                        short = 'normal'
+                        Onumber = '1101'                
+                        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
+                elif Citt == 1:
+                    if avmood1[n2-2] < 0 and avmood1[n2-1]<0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)                                                                                        
+                        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 > 0:
+                                idt1 = 'S'
+                                short = 'normal'
+                                Onumber = '1112'                               
+                                MO.list_acc()
+                                try:
+                                    Cquantity = MP.control1.ix[paper,'Quantity']
+                                    Cquantity = int(Cquantity)
+                                    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)								
+                                except Exception as e:
+                                    print( 'cant find the control data!')
+                                    with open('Errorlog.txt','a') as f:
+                                        print(time1,paper,'Control data read error!','Reason: ', e, file = f)                          
                 
-                elif avmood1[n2-2] < 0 and avmood1[n2-1]<0 and Citt==1.0:
-                    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-                        if avmood1_2 > 0:
-                            idt1 = 'S'
-                            short = 'normal'
-                            Onumber = '01'                               
-                            MO.list_acc()
-                            try:
-                                Cquantity = MP.control1.ix[paper,'Quantity']
-                                Cquantity = int(Cquantity)
-				MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)                        
-                            except Exception as e:
-                                print( 'cant find the control data!')
-                                with open('Errorlog.txt','a') as f:
-                                    print(time1,paper,'Control data read error!','Reason: ', e, file = f)                                                                                         
-                    else:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-                        if avmood1_2 > 0:
-                            idt1 = 'S'
-                            short = 'normal'
-                            Onumber = '10'                               
-                            MO.list_acc()
-                            try:
-                                Cquantity = MP.control1.ix[paper,'Quantity']
-                                Cquantity = int(Cquantity)
-                                MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)								
-                            except Exception as e:
-                                print( 'cant find the control data!')
-                                with open('Errorlog.txt','a') as f:
-                                    print(time1,paper,'Control data read error!','Reason: ', e, file = f)                          
-                elif avmood1[n2-2] <= 0 and avmood1[n2-1]>0 and Citt==0.0:
-                    quantity = int(Camount/price3)
-                    idt1 = 'B'
-                    short = 'normal'
-                    Onumber = '1'                
-                    MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
         
-                elif avmood1[n2-2] >0 and avmood1[n2-1]<=0 and Citt==1.0:
-                    idt1 = 'S'
-                    short = 'normal'
-                    Onumber = '1' 
-                    MO.list_acc()               
-                    try:
-                        Cquantity = MP.control1.ix[paper,'Quantity']
-                        Cquantity = int(Cquantity)
-                        MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)								
-                    except Exception as e:
-                        print( 'cant find the control data!')
-                        with open('Errorlog.txt','a') as f:
-                            print(time1,paper,'Control data read error!','Reason: ', e, file = f)
+                    elif avmood1[n2-2] >0 and avmood1[n2-1]<=0:
+                        idt1 = 'S'
+                        short = 'normal'
+                        Onumber = '1113' 
+                        MO.list_acc()               
+                        try:
+                            Cquantity = MP.control1.ix[paper,'Quantity']
+                            Cquantity = int(Cquantity)
+                            MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)								
+                        except Exception as e:
+                            print( 'cant find the control data!')
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'Control data read error!','Reason: ', e, file = f)
             elif Cmethod == 2:
-                if aadnp2[n2-2] > 0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0 and Citt==0:
-                    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-			if aadnp2_1 == 0 or aaupn2_1 < 0:
-			    quantity = int(Camount/price3)
-                            idt1 = 'B'
-                            short = 'normal'
-                            Onumber = '02'                
-                            MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
-		    else:
-			(avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-			if aadnp2_1 == 0 or aaupn2_1 < 0:
-			    quantity = int(Camount/price3)
-                            idt1 = 'B'
-                            short = 'normal'
-                            Onumber = '20'                
-                            MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
+                if Citt == 0:
+                    if aadnp2[n2-2] > 0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)
+  		        else:
+ 			    (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+ 			    if aadnp2_1 == 0 and aaupn2_1 <= 0:
+ 			        quantity = int(Camount/price3)
+                                idt1 = 'B'
+                                short = 'normal'
+                                Onumber = '1200'                
+                                MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
               
-                elif aadnp2[n2-2] == 0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0 and Citt==0:
-                    quantity = int(Camount/price3)
-                    idt1 = 'B'
-                    short = 'normal'
-                    Onumber = '2'                
-                    MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)                        
+                    elif aadnp2[n2-2] == 0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0:
+                        quantity = int(Camount/price3)
+                        idt1 = 'B'
+                        short = 'normal'
+                        Onumber = '1201'                
+                        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)                        
+                elif Citt == 1:    
+                    if aadnp2[n2-2] == 0 and aadnp2[n2-1] == 0:
+  		        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)
+  		        else:
+ 			    (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+ 			    if aadnp2_1 > 0:
+     			        idt1 = 'S'
+     			        short = 'normal'
+     			        Onumber = '1213'  
+     			        MO.list_acc()
+     			        try:
+        			    Cquantity = MP.control1.ix[paper,'Quantity']
+        			    Cquantity = int(Cquantity) 
+        			    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)						
+     			        except Exception as e:
+        			    print( 'cant find the control data!')
+        			    with open('Errorlog.txt','a') as f:
+        				print(time1,paper,'Control data read error!','Reason: ', e, file = f)
+        	    elif aadnp2[n2-2] > 0 and aadnp2[n2-1] == 0:
+        	        idt1 = 'S'
+     			short = 'normal'
+     			Onumber = '1214'  
+     			MO.list_acc()
+     			try:
+        		    Cquantity = MP.control1.ix[paper,'Quantity']
+        		    Cquantity = int(Cquantity) 
+        		    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)						
+     		        except Exception as e:
+        		    print( 'cant find the control data!')
+        		    with open('Errorlog.txt','a') as f:
+        			print(time1,paper,'Control data read error!','Reason: ', e, file = f)
+            elif(Cmethod == 0 and rmax1 >= rmax2):  
+                if Citt == 0:
+                    if avmood1[n2-2] >= 0 and avmood1[n2-1]>0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)
+  		        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 <= 0:                    
+                                quantity = int(Camount/price3)
+                                idt1 = 'B'
+                                short = 'normal'
+                                Onumber = '1300'                
+                                MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
+                    if avmood1[n2-2] <=0 and avmood1[n2-1]>0:
+                        quantity = int(Camount/price3)
+                        idt1 = 'B'
+                        short = 'normal'
+                        Onumber = '1301'                
+                        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)   
                     
-                elif aadnp2[n2-1] == 0 and Citt==1.0:
-		    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-			if aadnp2_1 > 0:
-                            idt1 = 'S'
-			    short = 'normal'
-			    Onumber = '02'  
-			    MO.list_acc()
-			    try:
-				Cquantity = MP.control1.ix[paper,'Quantity']
-				Cquantity = int(Cquantity) 
-				MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)						
-			    except Exception as e:
-				print( 'cant find the control data!')
-				with open('Errorlog.txt','a') as f:
-				    print(time1,paper,'Control data read error!','Reason: ', e, file = f) 
-		    else:
-			(avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-			if aadnp2_1 > 0:
-			    idt1 = 'S'
-			    short = 'normal'
-			    Onumber = '2'  
-			    MO.list_acc()
-			    try:
-				Cquantity = MP.control1.ix[paper,'Quantity']
-				Cquantity = int(Cquantity) 
-				MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)						
-			    except Exception as e:
-				print( 'cant find the control data!')
-				with open('Errorlog.txt','a') as f:
-				    print(time1,paper,'Control data read error!','Reason: ', e, file = f)
-            elif(Cmethod == 0 and rmax1 >= rmax2):   
-                if avmood1[n2-2] >= 0 and avmood1[n2-1]>0 and Citt==0:
-                    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-                        if avmood1_2 <= 0:                        
-                            quantity = int(Camount/price3)
-                            idt1 = 'B'
-                            short = 'normal'
-                            Onumber = '03'                
-                            MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
-		    else:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-                        if avmood1_2 <= 0:                    
-                            quantity = int(Camount/price3)
-                            idt1 = 'B'
-                            short = 'normal'
-                            Onumber = '30'                
-                            MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
-                elif avmood1[n2-2] < 0 and avmood1[n2-1]<0 and Citt==1.0:
-                    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-                        if avmood1_2 > 0:
-                            idt1 = 'S'
-                            short = 'normal'
-                            Onumber = '03' 
-                            MO.list_acc()
-                            try:
-                                Cquantity = MP.control1.ix[paper,'Quantity']
-                                Cquantity = int(Cquantity) 
-                                MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)								
-                            except Exception as e:
-                                print( 'cant find the control data!')
-                                with open('Errorlog.txt','a') as f:
-                                    print(time1,paper,'Control data read error!','Reason: ', e, file = f)           
-		    else:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-                        if avmood1_2 > 0:
-                            idt1 = 'S'
-                            short = 'normal'
-                            Onumber = '30'                               
-                            MO.list_acc()
-                            try:
-                                Cquantity = MP.control1.ix[paper,'Quantity']
-                                Cquantity = int(Cquantity) 
-                                MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)								
-                            except Exception as e:
-                                print( 'cant find the control data!')
-                                with open('Errorlog.txt','a') as f:
-                                    print(time1,paper,'Control data read error!','Reason: ', e, file = f)         
+                elif Citt == 1: 
+                
+                    if avmood1[n2-2] < 0 and avmood1[n2-1]<0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)          
+  		        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 > 0:
+                                idt1 = 'S'
+                                short = 'normal'
+                                Onumber = '1312'                               
+                                MO.list_acc()
+                                try:
+                                    Cquantity = MP.control1.ix[paper,'Quantity']
+                                    Cquantity = int(Cquantity) 
+                                    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)								
+                                except Exception as e:
+                                    print( 'cant find the control data!')
+                                    with open('Errorlog.txt','a') as f:
+                                        print(time1,paper,'Control data read error!','Reason: ', e, file = f)         
     
-                elif avmood1[n2-2] <=0 and avmood1[n2-1]>0 and Citt==0.0:
-                    quantity = int(Camount/price3)
-                    idt1 = 'B'
-                    short = 'normal'
-                    Onumber = '3'                
-                    MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)   
+               
    
-                elif avmood1[n2-2] >0 and avmood1[n2-1]<=0 and Citt==1.0:
-                    idt1 = 'S'
-                    short = 'normal'
-                    Onumber = '3'    
-                    MO.list_acc()
-                    try:
-
-                        Cquantity = MP.control1.ix[paper,'Quantity']
-                        Cquantity = int(Cquantity)
-                        MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
-                    except Exception as e:
-                        print( 'cant find the control data!')
-                        with open('Errorlog.txt','a') as f:
-                            print(time1,paper,'Control data read error!','Reason: ', e, file = f)             
+                    elif avmood1[n2-2] >0 and avmood1[n2-1]<=0:
+                        idt1 = 'S'
+                        short = 'normal'
+                        Onumber = '1313'    
+                        MO.list_acc()
+                        try:
+    
+                            Cquantity = MP.control1.ix[paper,'Quantity']
+                            Cquantity = int(Cquantity)
+                            MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
+                        except Exception as e:
+                            print( 'cant find the control data!')
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'Control data read error!','Reason: ', e, file = f)             
  
-            elif(Cmethod == 0 and rmax1 < rmax2):   
-                if aadnp2[n2-2]>0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0 and Citt==0:
-                    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-			if aadnp2_1 == 0 or aaupn2_1 < 0:
-			    quantity = int(Camount/price3)
-			    idt1 = 'B'
-                            short = 'normal'
-                            Onumber = '04'                
-                            MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)  	
-                    else:
-			(avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-			if aadnp2_1 == 0 or aaupn2_1 < 0:
-			    quantity = int(Camount/price3)
-                            idt1 = 'B'
-                            short = 'normal'
-                            Onumber = '40'                
-                            MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)            
-                elif aadnp2[n2-2] == 0 and aadnp2[n2-1]>0 and aaupn2[n2-1] ==0 and Citt==0.0:
+            elif(Cmethod == 0 and rmax1 < rmax2): 
+                if Citt == 0:
+                    if aadnp2[n2-2]>0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)  	
+                        else:
+ 			    (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+ 			    if aadnp2_1 == 0 and aaupn2_1 <= 0:
+ 			        quantity = int(Camount/price3)
+                                idt1 = 'B'
+                                short = 'normal'
+                                Onumber = '1400'                
+                                MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)            
+                    elif aadnp2[n2-2] == 0 and aadnp2[n2-1]>0 and aaupn2[n2-1] ==0:
 
-                    quantity = int(Camount/price3)
-                    idt1 = 'B'
-                    short = 'normal'
-                    Onumber = '4'                
-                    MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)   
-
-                elif aadnp2[n2-1] ==0 and Citt==1.0:
-                    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-			if aadnp2_1 > 0:
-                            idt1 = 'S'
-			    short = 'normal'
-			    Onumber = '04'  
-			    MO.list_acc()
-			    try:
-				Cquantity = MP.control1.ix[paper,'Quantity']
-				Cquantity = int(Cquantity) 
-			        MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)						
-			    except Exception as e:
-				print( 'cant find the control data!')
-			        with open('Errorlog.txt','a') as f:
-				    print(time1,paper,'Control data read error!','Reason: ', e, file = f) 
-		    else:
-			(avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-			if aadnp2_1 > 0:
-			    idt1 = 'S'
-			    short = 'normal'
-			    Onumber = '40'  
-			    MO.list_acc()
-			    try:
-				Cquantity = MP.control1.ix[paper,'Quantity']
-				Cquantity = int(Cquantity) 
-				MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)						
-			    except Exception as e:
-				print( 'cant find the control data!')
-				with open('Errorlog.txt','a') as f:
-				    print(time1,paper,'Control data read error!','Reason: ', e, file = f)            
+                        quantity = int(Camount/price3)
+                        idt1 = 'B'
+                        short = 'normal'
+                        Onumber = '1401'                
+                        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
+                    
+                elif Citt == 1:
+                    if aadnp2[n2-2] == 0 and aadnp2[n2-1] ==0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f) 
+      		        else:
+     			    (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+     			    if aadnp2_1 > 0:
+     			        idt1 = 'S'
+     			        short = 'normal'
+     			        Onumber = '1412'  
+     			        MO.list_acc()
+     			        try:
+        			    Cquantity = MP.control1.ix[paper,'Quantity']
+        			    Cquantity = int(Cquantity) 
+        			    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)						
+     			        except Exception as e:
+        			    print( 'cant find the control data!')
+        			    with open('Errorlog.txt','a') as f:
+        				print(time1,paper,'Control data read error!','Reason: ', e, file = f)   
+        	    elif aadnp2[n2-2] > 0 and aadnp2[n2-1] == 0:
+        	        idt1 = 'S'
+     			short = 'normal'
+     			Onumber = '1413'  
+     			MO.list_acc()
+     			try:
+        		    Cquantity = MP.control1.ix[paper,'Quantity']
+        		    Cquantity = int(Cquantity) 
+        		    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)						
+     		        except Exception as e:
+        		    print( 'cant find the control data!')
+        		    with open('Errorlog.txt','a') as f:
+        			print(time1,paper,'Control data read error!','Reason: ', e, file = f)         
                         
         elif Ctype == 2:
             if Cmethod == 1:
-                if avmood1[n2-2] < 0 and avmood1[n2-1]<0 and Citt==0.0:
-                    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-                        if avmood1_2 > 0:
-                            quantity = int(Camount/price3)
-                            idt1 = 'S'
-                            short = 'Short'
-                            Onumber = '01'                
-                            MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
-                    else:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-                        if avmood1_2 > 0:
-                            quantity = int(Camount/price3)
-                            idt1 = 'S'
-                            short = 'Short'
-                            Onumber = '10'                
-                            MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)                   
-                if avmood1[n2-2] >= 0 and avmood1[n2-1]>0 and Citt==1.0:
-                    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-                        if avmood1_2 <= 0:
-                            idt1 = 'B'
-                            short = 'short'
-                            Onumber = '01' 
-                            MO.list_acc()
-                            try:
-
-                                Cquantity = MP.control1.ix[paper,'BroShare']
-                                Cquantity = int(Cquantity)
-                                MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
-                            except Exception as e:
-                                print( 'cant find the control data!')
-                                with open('Errorlog.txt','a') as f:
-                                    print(time1,paper,'Control data read error!','Reason: ', e, file = f)                
-                             
-                    else:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-                        if avmood1_2 <= 0:                    
-                            idt1 = 'B'
-                            short = 'short'
-                            Onumber = '10' 
-                            MO.list_acc()
-                            try:
-                                Cquantity = MP.control1.ix[paper,'BroShare']
-                                Cquantity = int(Cquantity)
-                                MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
-                            except Exception as e:
-                                print( 'cant find the control data!')
-                                with open('Errorlog.txt','a') as f:
-                                    print(time1,paper,'Control data read error!','Reason: ', e, file = f)    
-                if avmood1[n2-2] > 0 and avmood1[n2-1]<=0 and Citt==0.0:
-                    quantity = int(Camount/price3)
-                    idt1 = 'S'
-                    short = 'Short'
-                    Onumber = '1'                
-                    MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
+                if Citt == 0:
+                    if avmood1[n2-2] < 0 and avmood1[n2-1]<0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)
+                        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 > 0:
+                                quantity = int(Camount/price3)
+                                idt1 = 'S'
+                                short = 'Short'
+                                Onumber = '2100'                
+                                MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
+                    elif avmood1[n2-2] > 0 and avmood1[n2-1]<=0:
+                        quantity = int(Camount/price3)
+                        idt1 = 'S'
+                        short = 'Short'
+                        Onumber = '2101'                
+                        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
+                elif Citt == 1:               
+                    if avmood1[n2-2] >= 0 and avmood1[n2-1]>0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)               
+                                
+                        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 <= 0:                    
+                                idt1 = 'B'
+                                short = 'short'
+                                Onumber = '2112' 
+                                MO.list_acc()
+                                try:
+                                    Cquantity = MP.control1.ix[paper,'BroShare']
+                                    Cquantity = int(Cquantity)
+                                    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
+                                except Exception as e:
+                                    print( 'cant find the control data!')
+                                    with open('Errorlog.txt','a') as f:
+                                        print(time1,paper,'Control data read error!','Reason: ', e, file = f)    
+                
                         
-                if avmood1[n2-2] <=0 and avmood1[n2-1]>0 and Citt==1.0:
-                    idt1 = 'B'
-                    short = 'Short'
-                    Onumber = '1'  
-                    MO.list_acc()
-                    try:
-                        Cquantity = MP.control1.ix[paper,'BroShare']
-                        Cquantity = int(Cquantity)
-                        MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
-                    except Exception as e:
-                        print( 'cant find the control data!')
-                        with open('Errorlog.txt','a') as f:
-                            print(time1,paper,'Control data read error!','Reason: ', e, file = f)
+                    elif avmood1[n2-2] <=0 and avmood1[n2-1]>0:
+                        idt1 = 'B'
+                        short = 'Short'
+                        Onumber = '2113'  
+                        MO.list_acc()
+                        try:
+                            Cquantity = MP.control1.ix[paper,'BroShare']
+                            Cquantity = int(Cquantity)
+                            MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
+                        except Exception as e:
+                            print( 'cant find the control data!')
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'Control data read error!','Reason: ', e, file = f)
             elif Cmethod == 2:
-                if aadnp2[n2-2]>0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0 and Citt==1:				
-                    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-		        if aadnp2_1 == 0 or aaupn2_1 < 0:
-                            idt1 = 'B'
-                            short = 'Short'
-                            Onumber = '02'  
-                            MO.list_acc()
-                            try:
-                                Cquantity = MP.control1.ix[paper,'BroShare']
-                                Cquantity = int(Cquantity)
-                                MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
-                            except Exception as e:
-                                print( 'cant find the control data!')
-                                with open('Errorlog.txt','a') as f:
-                                    print(time1,paper,'Control data read error!','Reason: ', e, file = f)               
-                            
-                    else:
-			(avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-			if aadnp2_1 == 0 or aaupn2_1 < 0:
-			    idt1 = 'B'
-                            short = 'Short'
-                            Onumber = '20'  
-                            MO.list_acc()
-                            try:
-                                Cquantity = MP.control1.ix[paper,'BroShare']
-                                Cquantity = int(Cquantity)
-                                MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
-                            except Exception as e:
-                                print( 'cant find the control data!')
-                                with open('Errorlog.txt','a') as f:
-                                    print(time1,paper,'Control data read error!','Reason: ', e, file = f) 
+                if Citt == 0:
+                    if aadnp2[n2-2] == 0 and aadnp2[n2-1] == 0:
+  		        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f) 
+  		        else:
+ 			    (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+     		            if aadnp2_1 > 0:
+     			        quantity = int(Camount/price3)
+     			        idt1 = 'S'
+     			        short = 'Short'
+     			        Onumber = '2200'                
+     			        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
+     		    elif aadnp2[n2-2] > 0 and aadnp2[n2-1] == 0:
+        	        idt1 = 'S'
+     			short = 'Short'
+     			Onumber = '2201'  
+     			MO.list_acc()
+     			try:
+        		    Cquantity = MP.control1.ix[paper,'Quantity']
+        		    Cquantity = int(Cquantity) 
+        		    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)						
+     		        except Exception as e:
+        		    print( 'cant find the control data!')
+        		    with open('Errorlog.txt','a') as f:
+        			print(time1,paper,'Control data read error!','Reason: ', e, file = f) 
+                elif Citt == 1:
+                    if aadnp2[n2-2]>0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0:				
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)             
+                                
+                        else:
+ 			    (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+ 			    if aadnp2_1 == 0 and aaupn2_1 <= 0:
+ 			        idt1 = 'B'
+                                short = 'normal'
+                                Onumber = '2211'  
+                                MO.list_acc()
+                                try:
+                                    Cquantity = MP.control1.ix[paper,'BroShare']
+                                    Cquantity = int(Cquantity)
+                                    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
+                                except Exception as e:
+                                    print( 'cant find the control data!')
+                                    with open('Errorlog.txt','a') as f:
+                                        print(time1,paper,'Control data read error!','Reason: ', e, file = f) 
 
-                elif aadnp2[n2-2] == 0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0 and Citt==1:
-                    idt1 = 'B'
-                    short = 'Short'
-                    Onumber = '2' 
-                    MO.list_acc()
-                    try:
-                        Cquantity = MP.control1.ix[paper,'BroShare']
-                        Cquantity = int(Cquantity)
-                        MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
-                    except Exception as e:
-                        print( 'cant find the control data!')
-                        with open('Errorlog.txt','a') as f:
-                            print(time1,paper,'Control data read error!','Reason: ', e, file = f)                
-                elif aadnp2[n2-1] == 0 and Citt==0.0:
-		    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-			if aadnp2_1 > 0:
-			    quantity = int(Camount/price3)
-			    idt1 = 'S'
-			    short = 'Short'
-			    Onumber = '02'                
-			    MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
-		    else:
-			(avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-			if aadnp2_1 > 0:
-			    quantity = int(Camount/price3)
-			    idt1 = 'S'
-			    short = 'Short'
-			    Onumber = '20'                
-			    MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
+                    elif aadnp2[n2-2] == 0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0:
+                        idt1 = 'B'
+                        short = 'normal'
+                        Onumber = '2212' 
+                        MO.list_acc()
+                        try:
+                            Cquantity = MP.control1.ix[paper,'BroShare']
+                            Cquantity = int(Cquantity)
+                            MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
+                        except Exception as e:
+                            print( 'cant find the control data!')
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'Control data read error!','Reason: ', e, file = f)                
+                
             elif(Cmethod == 0 and rmax1 >= rmax2): 
-                if avmood1[n2-2] < 0 and avmood1[n2-1]<0 and Citt==0.0:
-                    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-                        if avmood1_2 > 0:
-                            quantity = int(Camount/price3)
-                            idt1 = 'S'
-                            short = 'Short'
-                            Onumber = '03'                
-                            MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
-                    else:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-                        if avmood1_2 > 0:
-                            quantity = int(Camount/price3)
-                            idt1 = 'S'
-                            short = 'Short'
-                            Onumber = '30'                
-                            MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)                 
-                if avmood1[n2-2] >= 0 and avmood1[n2-1]>0 and Citt==1.0:
-                    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-                        if avmood1_2 <= 0:
-                            idt1 = 'B'
-                            short = 'Short'
-                            Onumber = '03'  
-                            MO.list_acc()
-                            try:
-                                Cquantity = MP.control1.ix[paper,'BroShare']
-                                Cquantity = int(Cquantity)
-				MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)                         
-                            except Exception as e:
-                                print( 'cant find the control data!')
-                                with open('Errorlog.txt','a') as f:
-                                    print(time1,paper,'Control data read error!','Reason: ', e, file = f)               
-                            
-                    else:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-                        if avmood1_2 <= 0:                    
-                            idt1 = 'B'
-                            short = 'short'
-                            Onumber = '30' 
-                            MO.list_acc()
-                            try:
-                                Cquantity = MP.control1.ix[paper,'BroShare']
-                                Cquantity = int(Cquantity)
-                                MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
-                            except Exception as e:
-                                print( 'cant find the control data!')
-                                with open('Errorlog.txt','a') as f:
-                                    print(time1,paper,'Control data read error!','Reason: ', e, file = f)   
-                if avmood1[n2-2] > 0 and avmood1[n2-1]<=0 and Citt==0.0:
-                    quantity = int(Camount/price3)
-                    idt1 = 'S'
-                    short = 'Short'
-                    Onumber = '3'                
-                    MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
+                if Citt == 0:
+                    if avmood1[n2-2] < 0 and avmood1[n2-1]<0 :
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)
+                        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 > 0:
+                                quantity = int(Camount/price3)
+                                idt1 = 'S'
+                                short = 'Short'
+                                Onumber = '2300'                
+                                MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)   
+                    elif avmood1[n2-2] > 0 and avmood1[n2-1]<=0:
+                        quantity = int(Camount/price3)
+                        idt1 = 'S'
+                        short = 'Short'
+                        Onumber = '2301'                
+                        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
+                elif Citt == 1:
+                           
+                    if avmood1[n2-2] >= 0 and avmood1[n2-1]>0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)              
+                                
+                        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 <= 0:                    
+                                idt1 = 'B'
+                                short = 'normal'
+                                Onumber = '2312' 
+                                MO.list_acc()
+                                try:
+                                    Cquantity = MP.control1.ix[paper,'BroShare']
+                                    Cquantity = int(Cquantity)
+                                    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
+                                except Exception as e:
+                                    print( 'cant find the control data!')
+                                    with open('Errorlog.txt','a') as f:
+                                        print(time1,paper,'Control data read error!','Reason: ', e, file = f)   
+                
 
-                if avmood1[n2-2] <= 0 and avmood1[n2-1]>0 and Citt==1.0:			
-                    idt1 = 'B'
-                    short = 'Short'
-                    Onumber = '3' 
-                    MO.list_acc()
-                    try:
-                        Cquantity = MP.control1.ix[paper,'BroShare']
-                        Cquantity = int(Cquantity)
-			MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
-                    except Exception as e:
-                        print( 'cant find the control data!')
-                        with open('Errorlog.txt','a') as f:
-                            print(time1,paper,'Control data read error!','Reason: ', e, file = f)
+                    elif avmood1[n2-2] <= 0 and avmood1[n2-1]>0:			
+                        idt1 = 'B'
+                        short = 'normal'
+                        Onumber = '2313' 
+                        MO.list_acc()
+                        try:
+                            Cquantity = MP.control1.ix[paper,'BroShare']
+                            Cquantity = int(Cquantity)
+ 			    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
+                        except Exception as e:
+                            print( 'cant find the control data!')
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'Control data read error!','Reason: ', e, file = f)
             elif(Cmethod == 0 and rmax1 < rmax2): 
-                if aadnp2[n2-2]>0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0 and Citt==1:				
-
-                    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-		        if aadnp2_1 == 0 or aaupn2_1 < 0:
-                            idt1 = 'B'
-                            short = 'Short'
-                            Onumber = '04'  
-                            MO.list_acc()
-                            try:
-                                Cquantity = MP.control1.ix[paper,'BroShare']
-                                Cquantity = int(Cquantity)
-                                MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
-                            except Exception as e:
-                                print( 'cant find the control data!')
-                                with open('Errorlog.txt','a') as f:
-                                    print(time1,paper,'Control data read error!','Reason: ', e, file = f)               
-                    else:
-			(avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-			if aadnp2_1 == 0 or aaupn2_1 < 0:
-			    idt1 = 'B'
-                            short = 'Short'
-                            Onumber = '40'  
-                            MO.list_acc()
-                            try:
-                                Cquantity = MP.control1.ix[paper,'BroShare']
-                                Cquantity = int(Cquantity)
-                                MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
-                            except Exception as e:
-                                print( 'cant find the control data!')
-                                with open('Errorlog.txt','a') as f:
-                                    print(time1,paper,'Control data read error!','Reason: ', e, file = f)         
-                if aadnp2[n2-2] == 0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0 and Citt==1:
-                    idt1 = 'B'
-                    short = 'Short'
-                    Onumber = '4'  
-                    MO.list_acc()
-                    try:
-                        Cquantity = MP.control1.ix[paper,'BroShare']
-                        Cquantity = int(Cquantity)
-			MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
-                    except Exception as e:
-                        print( 'cant find the control data!')
-                        with open('Errorlog.txt','a') as f:
-                            print(time1,paper,'Control data read error!','Reason: ', e, file = f)               
+                if Citt == 0:
+                    if aadnp2[n2-2] == 0 and aadnp2[n2-1] == 0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f) 
+  		        else:
+  		            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+ 			    if aadnp2_1 > 0:
+ 			        quantity = int(Camount/price3)
+ 			        idt1 = 'S'
+ 			        short = 'Short'
+ 			        Onumber = '2400'                
+ 			        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
+ 		    elif aadnp2[n2-2] > 0 and aadnp2[n2-1] == 0:
+        	        idt1 = 'S'
+     			short = 'Short'
+     			Onumber = '2401'  
+     			MO.list_acc()
+     			try:
+        		    Cquantity = MP.control1.ix[paper,'Quantity']
+        		    Cquantity = int(Cquantity) 
+        		    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)						
+     		        except Exception as e:
+        		    print( 'cant find the control data!')
+        		    with open('Errorlog.txt','a') as f:
+        			print(time1,paper,'Control data read error!','Reason: ', e, file = f)
+                elif Citt == 1:
+                
+                    if aadnp2[n2-2]>0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0:				
+    
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)             
+                        else:
+ 			    (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+ 			    if aadnp2_1 == 0 and aaupn2_1 <= 0:
+ 			        idt1 = 'B'
+                                short = 'Short'
+                                Onumber = '2411'  
+                                MO.list_acc()
+                                try:
+                                    Cquantity = MP.control1.ix[paper,'BroShare']
+                                    Cquantity = int(Cquantity)
+                                    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
+                                except Exception as e:
+                                    print( 'cant find the control data!')
+                                    with open('Errorlog.txt','a') as f:
+                                        print(time1,paper,'Control data read error!','Reason: ', e, file = f)         
+                    elif aadnp2[n2-2] == 0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0:
+                        idt1 = 'B'
+                        short = 'Short'
+                        Onumber = '2412'  
+                        MO.list_acc()
+                        try:
+                            Cquantity = MP.control1.ix[paper,'BroShare']
+                            Cquantity = int(Cquantity)
+ 			    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
+                        except Exception as e:
+                            print( 'cant find the control data!')
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'Control data read error!','Reason: ', e, file = f)               
                      
-                if aadnp2[n2-1] == 0 and Citt==0.0:
-                    if MCP.checkPara(paper, today1) == 0:
-                        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, lastday)
-			if aadnp2_1 > 0:
-			    quantity = int(Camount/price3)
-			    idt1 = 'S'
-			    short = 'Short'
-			    Onumber = '04'                
-			    MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
-		    else:
-		        (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper, today1)
-			if aadnp2_1 > 0:
-			    quantity = int(Camount/price3)
-			    idt1 = 'S'
-			    short = 'Short'
-			    Onumber = '40'                
-			    MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
-    		
+                
+    	elif Ctype == 3:
+            if Cmethod == 1:
+                if Citt == 0:
+                    if avmood1[n2-2] < 0 and avmood1[n2-1]<0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)
+                        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 > 0:
+                                quantity = int(Camount/price3)
+                                idt1 = 'S'
+                                short = 'Short'
+                                Onumber = '3100'                
+                                MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)                   
+                    elif avmood1[n2-2] > 0 and avmood1[n2-1]<=0:
+                        quantity = int(Camount/price3)
+                        idt1 = 'S'
+                        short = 'Short'
+                        Onumber = '3101'                
+                        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
+                    elif avmood1[n2-2] >= 0 and avmood1[n2-1]>0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)
+                        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 <= 0:
+                                quantity = int(Camount/price3)
+                                idt1 = 'B'
+                                short = 'normal'
+                                Onumber = '3102'                
+                                MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)                   
+                    elif avmood1[n2-2] <= 0 and avmood1[n2-1] > 0:
+                        quantity = int(Camount/price3)
+                        idt1 = 'B'
+                        short = 'normal'
+                        Onumber = '3103'                
+                        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)    
+                elif Citt == 1:
+                    if avmood1[n2-2] >= 0 and avmood1[n2-1]>0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)               
+                                
+                        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 <= 0:                    
+                                idt1 = 'B'
+                                short = 'normal'
+                                Onumber = '3114' 
+                                MO.list_acc()
+                                try:
+                                    Cquantity = MP.control1.ix[paper,'BroShare']
+                                    Cquantity = int(Cquantity)*2
+                                    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
+                                except Exception as e:
+                                    print( 'cant find the control data!')
+                                    with open('Errorlog.txt','a') as f:
+                                        print(time1,paper,'Control data read error!','Reason: ', e, file = f)    
+                 
+                        
+                    elif avmood1[n2-2] <=0 and avmood1[n2-1]>0:
+                        idt1 = 'B'
+                        short = 'normal'
+                        Onumber = '3115'  
+                        MO.list_acc()
+                        try:
+                            Cquantity = MP.control1.ix[paper,'BroShare']
+                            Cquantity = int(Cquantity)*2
+                            MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
+                        except Exception as e:
+                            print( 'cant find the control data!')
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'Control data read error!','Reason: ', e, file = f)
+                                
+                    elif avmood1[n2-2] < 0 and avmood1[n2-1] < 0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)               
+                                
+                        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 > 0:                    
+                                idt1 = 'S'
+                                short = 'Short'
+                                Onumber = '3116' 
+                                MO.list_acc()
+                                try:
+                                    Cquantity = MP.control1.ix[paper,'BroShare']
+                                    Cquantity = int(Cquantity)*2
+                                    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
+                                except Exception as e:
+                                    print( 'cant find the control data!')
+                                    with open('Errorlog.txt','a') as f:
+                                        print(time1,paper,'Control data read error!','Reason: ', e, file = f)    
+                 
+                        
+                    elif avmood1[n2-2] >0 and avmood1[n2-1]<=0:
+                        idt1 = 'S'
+                        short = 'Short'
+                        Onumber = '3117'  
+                        MO.list_acc()
+                        try:
+                            Cquantity = MP.control1.ix[paper,'BroShare']
+                            Cquantity = int(Cquantity)*2
+                            MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
+                        except Exception as e:
+                            print( 'cant find the control data!')
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'Control data read error!','Reason: ', e, file = f)
+            elif Cmethod == 2:
+                if Citt == 0:
+                    if aadnp2[n2-2] == 0 and aadnp2[n2-1] == 0:
+		        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                 print(time1,paper,'No old paraTrade date!', file = f) 
+		        else:
+			    (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+			    if aadnp2_1 > 0:
+			        quantity = int(Camount/price3)
+			        idt1 = 'S'
+			        short = 'Short'
+			        Onumber = '3200'                
+			        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
+		    elif aadnp2[n2-2] > 0 and aadnp2[n2-1] == 0:
+        	        idt1 = 'S'
+     			short = 'Short'
+     			Onumber = '3201'  
+     			MO.list_acc()
+     			try:
+        		    Cquantity = MP.control1.ix[paper,'Quantity']
+        		    Cquantity = int(Cquantity) 
+        		    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)						
+     		        except Exception as e:
+        		    print( 'cant find the control data!')
+        		    with open('Errorlog.txt','a') as f:
+        			print(time1,paper,'Control data read error!','Reason: ', e, file = f) 
+        			
+                    if aadnp2[n2-2]>0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0:				
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)             
+                                
+                        else:
+ 			    (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+     			    if aadnp2_1 == 0 and aaupn2_1 <= 0:
+     			        quantity = int(Camount/price3)
+			        idt1 = 'B'
+			        short = 'normal'
+			        Onumber = '3202'                
+			        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
+
+                    elif aadnp2[n2-2] == 0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0:
+                        quantity = int(Camount/price3)
+			idt1 = 'B'
+			short = 'normal'
+			Onumber = '3203'                
+			MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
+
+                elif Citt == 1:
+             
+                    if aadnp2[n2-2]>0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0:				
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)             
+                                
+                        else:
+ 			    (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+ 			    if aadnp2_1 == 0 and aaupn2_1 <= 0:
+ 			        idt1 = 'B'
+                                short = 'normal'
+                                Onumber = '3213'  
+                                MO.list_acc()
+                                try:
+                                    Cquantity = MP.control1.ix[paper,'BroShare']
+                                    Cquantity = int(Cquantity)*2
+                                    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
+                                except Exception as e:
+                                    print( 'cant find the control data!')
+                                    with open('Errorlog.txt','a') as f:
+                                        print(time1,paper,'Control data read error!','Reason: ', e, file = f) 
+
+                    elif aadnp2[n2-2] == 0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0:
+                        idt1 = 'B'
+                        short = 'normal'
+                        Onumber = '3214' 
+                        MO.list_acc()
+                        try:
+                            Cquantity = MP.control1.ix[paper,'BroShare']
+                            Cquantity = int(Cquantity)*2
+                            MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
+                        except Exception as e:
+                            print( 'cant find the control data!')
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'Control data read error!','Reason: ', e, file = f) 
+                    elif aadnp2[n2-2] == 0 and aadnp2[n2-1]==0 :				
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)             
+                                
+                        else:
+ 			    (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+ 			    if aadnp2_1 > 0 :
+ 			        idt1 = 'S'
+                                short = 'Short'
+                                Onumber = '3215'  
+                                MO.list_acc()
+                                try:
+                                    Cquantity = MP.control1.ix[paper,'BroShare']
+                                    Cquantity = int(Cquantity)*2
+                                    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
+                                except Exception as e:
+                                    print( 'cant find the control data!')
+                                    with open('Errorlog.txt','a') as f:
+                                        print(time1,paper,'Control data read error!','Reason: ', e, file = f)  
+                    elif aadnp2[n2-2] > 0 and aadnp2[n2-1] == 0:
+        	        idt1 = 'S'
+     			short = 'Short'
+     			Onumber = '3216'  
+     			MO.list_acc()
+     			try:
+        		    Cquantity = MP.control1.ix[paper,'Quantity']
+        		    Cquantity = int(Cquantity)*2 
+        		    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)						
+     		        except Exception as e:
+        		    print( 'cant find the control data!')
+        		    with open('Errorlog.txt','a') as f:
+        			print(time1,paper,'Control data read error!','Reason: ', e, file = f)
+                                   
+                
+            elif(Cmethod == 0 and rmax1 >= rmax2): 
+                if Citt == 0:
+                    if avmood1[n2-2] < 0 and avmood1[n2-1]<0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)
+                        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 > 0:
+                                quantity = int(Camount/price3)
+                                idt1 = 'S'
+                                short = 'Short'
+                                Onumber = '3300'                
+                                MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)                   
+                    elif avmood1[n2-2] > 0 and avmood1[n2-1]<=0:
+                        quantity = int(Camount/price3)
+                        idt1 = 'S'
+                        short = 'Short'
+                        Onumber = '3301'                
+                        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)
+                    elif avmood1[n2-2] >= 0 and avmood1[n2-1]>0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)
+                        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 <= 0:
+                                quantity = int(Camount/price3)
+                                idt1 = 'B'
+                                short = 'normal'
+                                Onumber = '3302'                
+                                MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)                   
+                    elif avmood1[n2-2] <= 0 and avmood1[n2-1] > 0:
+                        quantity = int(Camount/price3)
+                        idt1 = 'B'
+                        short = 'normal'
+                        Onumber = '3303'                
+                        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt)    
+                elif Citt == 1:
+                    if avmood1[n2-2] >= 0 and avmood1[n2-1]>0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)               
+                                
+                        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 <= 0:                    
+                                idt1 = 'B'
+                                short = 'normal'
+                                Onumber = '3314' 
+                                MO.list_acc()
+                                try:
+                                    Cquantity = MP.control1.ix[paper,'BroShare']
+                                    Cquantity = int(Cquantity)*2
+                                    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
+                                except Exception as e:
+                                    print( 'cant find the control data!')
+                                    with open('Errorlog.txt','a') as f:
+                                        print(time1,paper,'Control data read error!','Reason: ', e, file = f)    
+                 
+                        
+                    elif avmood1[n2-2] <=0 and avmood1[n2-1]>0:
+                        idt1 = 'B'
+                        short = 'normal'
+                        Onumber = '3315'  
+                        MO.list_acc()
+                        try:
+                            Cquantity = MP.control1.ix[paper,'BroShare']
+                            Cquantity = int(Cquantity)*2
+                            MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
+                        except Exception as e:
+                            print( 'cant find the control data!')
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'Control data read error!','Reason: ', e, file = f)
+                                
+                    elif avmood1[n2-2] < 0 and avmood1[n2-1] < 0:
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)               
+                                
+                        else:
+                            (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+                            if avmood1_2 > 0:                    
+                                idt1 = 'S'
+                                short = 'Short'
+                                Onumber = '3316' 
+                                MO.list_acc()
+                                try:
+                                    Cquantity = MP.control1.ix[paper,'BroShare']
+                                    Cquantity = int(Cquantity)*2
+                                    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
+                                except Exception as e:
+                                    print( 'cant find the control data!')
+                                    with open('Errorlog.txt','a') as f:
+                                        print(time1,paper,'Control data read error!','Reason: ', e, file = f)    
+                 
+                        
+                    elif avmood1[n2-2] >0 and avmood1[n2-1]<=0:
+                        idt1 = 'S'
+                        short = 'Short'
+                        Onumber = '3317'  
+                        MO.list_acc()
+                        try:
+                            Cquantity = MP.control1.ix[paper,'BroShare']
+                            Cquantity = int(Cquantity)*2
+                            MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
+                        except Exception as e:
+                            print( 'cant find the control data!')
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'Control data read error!','Reason: ', e, file = f)
+            elif(Cmethod == 0 and rmax1 < rmax2): 
+                if Citt == 0:
+                    if aadnp2[n2-2] == 0 and aadnp2[n2-1] == 0:
+		        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                 print(time1,paper,'No old paraTrade date!', file = f) 
+		        else:
+			    (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+			    if aadnp2_1 > 0:
+			        quantity = int(Camount/price3)
+			        idt1 = 'S'
+			        short = 'Short'
+			        Onumber = '3400'                
+			        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
+		    
+		    elif aadnp2[n2-2] > 0 and aadnp2[n2-1] == 0:
+        	        idt1 = 'S'
+     			short = 'normal'
+     			Onumber = '3401'  
+     			MO.list_acc()
+     			try:
+        		    Cquantity = MP.control1.ix[paper,'Quantity']
+        		    Cquantity = int(Cquantity) 
+        		    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)						
+     		        except Exception as e:
+        		    print( 'cant find the control data!')
+        		    with open('Errorlog.txt','a') as f:
+        			print(time1,paper,'Control data read error!','Reason: ', e, file = f)
+		    
+                    elif aadnp2[n2-2]>0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0:				
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)             
+                                
+                        else:
+ 			    (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+     			    if aadnp2_1 == 0 and aaupn2_1 <= 0:
+     			        quantity = int(Camount/price3)
+			        idt1 = 'B'
+			        short = 'normal'
+			        Onumber = '3402'                
+			        MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
+
+                    elif aadnp2[n2-2] == 0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0:
+                        quantity = int(Camount/price3)
+			idt1 = 'B'
+			short = 'normal'
+			Onumber = '3403'                
+			MPO.placeOrder(paper, exchange, idt1, quantity, short, Cnumber, Onumber, Citt) 
+
+                elif Citt == 1:
+             
+                    if aadnp2[n2-2]>0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0:				
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)             
+                                
+                        else:
+ 			    (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+ 			    if aadnp2_1 == 0 and aaupn2_1 <= 0:
+ 			        idt1 = 'B'
+                                short = 'normal'
+                                Onumber = '3413'  
+                                MO.list_acc()
+                                try:
+                                    Cquantity = MP.control1.ix[paper,'BroShare']
+                                    Cquantity = int(Cquantity)*2
+                                    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
+                                except Exception as e:
+                                    print( 'cant find the control data!')
+                                    with open('Errorlog.txt','a') as f:
+                                        print(time1,paper,'Control data read error!','Reason: ', e, file = f) 
+
+                    elif aadnp2[n2-2] == 0 and aadnp2[n2-1]>0 and aaupn2[n2-1] == 0:
+                        idt1 = 'B'
+                        short = 'normal'
+                        Onumber = '3414' 
+                        MO.list_acc()
+                        try:
+                            Cquantity = MP.control1.ix[paper,'BroShare']
+                            Cquantity = int(Cquantity)*2
+                            MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)
+                        except Exception as e:
+                            print( 'cant find the control data!')
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'Control data read error!','Reason: ', e, file = f) 
+                    elif aadnp2[n2-2] == 0 and aadnp2[n2-1]==0 :				
+                        if MCP.checkPara(paper) == 0:
+                            with open('Errorlog.txt','a') as f:
+                                print(time1,paper,'No old paraTrade date!', file = f)             
+                                
+                        else:
+ 			    (avmood1_2, avmood1_1, aadnp2_2, aadnp2_1, aaupn2_1) = MCP.checkPara(paper)
+ 			    if aadnp2_1 > 0 :
+ 			        idt1 = 'S'
+                                short = 'Short'
+                                Onumber = '3415'  
+                                MO.list_acc()
+                                try:
+                                    Cquantity = MP.control1.ix[paper,'BroShare']
+                                    Cquantity = int(Cquantity)*2
+                                    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt) 
+                                except Exception as e:
+                                    print( 'cant find the control data!')
+                                    with open('Errorlog.txt','a') as f:
+                                        print(time1,paper,'Control data read error!','Reason: ', e, file = f)
+                    elif aadnp2[n2-2] > 0 and aadnp2[n2-1] == 0:
+        	        idt1 = 'S'
+     			short = 'Short'
+     			Onumber = '3416'  
+     			MO.list_acc()
+     			try:
+        		    Cquantity = MP.control1.ix[paper,'Quantity']
+        		    Cquantity = int(Cquantity)*2 
+        		    MPO.placeOrder(paper, exchange, idt1, Cquantity, short, Cnumber, Onumber, Citt)						
+     		        except Exception as e:
+        		    print( 'cant find the control data!')
+        		    with open('Errorlog.txt','a') as f:
+        			print(time1,paper,'Control data read error!','Reason: ', e, file = f)
 		
     file_name1 = 'TraRe'+str(today1)+'.txt'  
          
